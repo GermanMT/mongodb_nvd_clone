@@ -10,6 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncI
 CLIENT = None
 DELAY: float = 0.
 
+
 async def nvd_updater(client: AsyncIOMotorClient, headers: dict[str, str], delay: float) -> None:
     global CLIENT
     global DELAY

@@ -3,7 +3,9 @@ from motor.motor_asyncio import AsyncIOMotorClient,AsyncIOMotorDatabase, AsyncIO
 from time import sleep
 from pymongo import InsertOne
 
+
 cpe_uri: str = 'https://services.nvd.nist.gov/rest/json/cpes/2.0?startIndex='
+
 
 async def clone_cpes(client: AsyncIOMotorClient, delay: float, headers: dict[str, str]):
     nvd_clone_db: AsyncIOMotorDatabase = client.nvd
