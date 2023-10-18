@@ -22,4 +22,4 @@ You can also create a cron job that is triggered every two hours, which keeps yo
 python3 main.py synchronise_job [your_mongodb_uri] --nvd_api [your_nvd_api_key]
 ```
 
-This commands requires the uri of the initialised MongoDB database and an optional NVD API [key](https://nvd.nist.gov/developers/request-an-api-key). Although the API key is optional, using it will make the cloning process go 5 to 6 times faster.
+This commands requires the uri of the initialised MongoDB database and an optional NVD API [key](https://nvd.nist.gov/developers/request-an-api-key). Although the API key is optional, using it will make the cloning and sync process go 5 to 6 times faster.
