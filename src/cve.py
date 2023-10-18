@@ -10,6 +10,7 @@ cve_uri: str = 'https://services.nvd.nist.gov/rest/json/cves/2.0?startIndex='
 async def clone_cves(client: AsyncIOMotorClient, delay: float, headers: dict[str, str]):
     nvd_clone_db: AsyncIOMotorDatabase = client.nvd
     cves_collection: AsyncIOMotorCollection = nvd_clone_db.get_collection('cves')
+    await cves_collection.create_index('id', unique=True)
     index: int = 0
     while True:
         actions: list[InsertOne] = []
