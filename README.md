@@ -13,7 +13,13 @@ Currently the only way to consume NVD data is through a public [API](https://nvd
 This repository solves this problem by creating an automatic clone on a MongoDB database that the developer has already initialised. This is done using the command:
 
 ```
-python3 main.py [your_mongodb_uri] --nvd_api [your_nvd_api_key]
+python3 main.py clone [your_mongodb_uri] --nvd_api [your_nvd_api_key]
 ```
 
-This command requires the uri of the initialised MongoDB database and an optional NVD API [key](https://nvd.nist.gov/developers/request-an-api-key). Although the API key is optional, using it will make the cloning process go 5 to 6 times faster.
+You can also create a cron job that is triggered every two hours, which keeps your local database in sync with the NVD database. Using this command:
+
+```
+python3 main.py synchronise_job [your_mongodb_uri] --nvd_api [your_nvd_api_key]
+```
+
+This commands requires the uri of the initialised MongoDB database and an optional NVD API [key](https://nvd.nist.gov/developers/request-an-api-key). Although the API key is optional, using it will make the cloning process go 5 to 6 times faster.
