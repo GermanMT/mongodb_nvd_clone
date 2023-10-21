@@ -7,7 +7,7 @@ from requests import get, ConnectTimeout, ConnectionError
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 
-async def nvd_updater(client: AsyncIOMotorClient, headers: dict[str, str], delay: float) -> None:
+async def nvd_sync(client: AsyncIOMotorClient, headers: dict[str, str], delay: float) -> None:
     now = datetime.now()
     two_hours = timedelta(hours=2)
     start_date = (now - two_hours).isoformat()
@@ -17,7 +17,13 @@ async def nvd_updater(client: AsyncIOMotorClient, headers: dict[str, str], delay
     await update_cpes(client, headers, delay, start_date, end_date)
 
 
-async def update_cves(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
+async def update_cves(
+    client: AsyncIOMotorClient,
+    headers: dict[str, str],
+    delay: float,
+    start_date: str,
+    end_date: str,
+) -> None:
     while True:
         try:
             response = get(
@@ -46,7 +52,13 @@ async def update_cves(client: AsyncIOMotorClient, headers: dict[str, str], delay
     await bulk_write_actions(client, actions, 'cves')
 
 
-async def update_cpe_matchs(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
+async def update_cpe_matchs(
+    client: AsyncIOMotorClient,
+    headers: dict[str, str],
+    delay: float,
+    start_date: str,
+    end_date: str,
+) -> None:
     while True:
         try:
             response = get(
@@ -62,7 +74,13 @@ async def update_cpe_matchs(client: AsyncIOMotorClient, headers: dict[str, str],
     await bulk_write_actions(client, actions, 'cpe_matchs')
 
 
-async def update_cpes(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
+async def update_cpes(
+    client: AsyncIOMotorClient,
+    headers: dict[str, str],
+    delay: float,
+    start_date: str,
+    end_date: str,
+) -> None:
     while True:
         try:
             response = get(
@@ -109,7 +127,9 @@ async def sanitize_cpes(response: dict[str, Any]) -> list[Any]:
     return actions
 
 
-async def bulk_write_actions(client: AsyncIOMotorClient, actions: list[Any], collection_name: str) -> None:
+async def bulk_write_actions(
+    client: AsyncIOMotorClient, actions: list[Any], collection_name: str
+) -> None:
     nvd_clone_db: AsyncIOMotorDatabase = client.nvd
     collection: AsyncIOMotorCollection = nvd_clone_db.get_collection(collection_name)
     await collection.bulk_write(actions, ordered=True)
