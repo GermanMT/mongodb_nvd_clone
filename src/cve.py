@@ -23,7 +23,7 @@ async def clone_cves(client: AsyncIOMotorClient, delay: float, headers: dict[str
                 sleep(6)
         for vulnerability in response['vulnerabilities']:
             actions.append(InsertOne(vulnerability['cve']))
-        index+=response['resultsPerPage']
+        index += response['resultsPerPage']
         await cves_collection.bulk_write(actions, ordered=False)
         if index == response['totalResults']:
             break

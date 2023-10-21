@@ -7,67 +7,75 @@ from requests import get, ConnectTimeout, ConnectionError
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 
-CLIENT = None
-DELAY: float = 0.
-
-
 async def nvd_updater(client: AsyncIOMotorClient, headers: dict[str, str], delay: float) -> None:
-    global CLIENT
-    global DELAY
-    CLIENT: AsyncIOMotorClient = client
-    DELAY: float = delay
-    
     now = datetime.now()
     two_hours = timedelta(hours=2)
     start_date = (now - two_hours).isoformat()
     end_date = now.isoformat()
-    await update_cves(start_date, end_date, headers)
-    await update_cpe_matchs(start_date, end_date, headers)
-    await update_cpes(start_date, end_date, headers)
+    await update_cves(client, headers, delay, start_date, end_date)
+    await update_cpe_matchs(client, headers, delay, start_date, end_date)
+    await update_cpes(client, headers, delay, start_date, end_date)
 
 
-async def update_cves(start_date: str, end_date: str, headers: dict[str, str]) -> None:
+async def update_cves(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
     while True:
         try:
-            response = get('https://services.nvd.nist.gov/rest/json/cves/2.0?', params={'pubStartDate': str(start_date),'pubEndDate': str(end_date)}, headers=headers).json()
-            sleep(DELAY)
+            response = get(
+                'https://services.nvd.nist.gov/rest/json/cves/2.0?',
+                params={'pubStartDate': str(start_date), 'pubEndDate': str(end_date)},
+                headers=headers,
+            ).json()
+            sleep(delay)
             break
         except (ConnectTimeout, ConnectionError):
             sleep(6)
     actions = await sanitize_cves(response)
-    await bulk_write_actions(actions, 'cves')
+    await bulk_write_actions(client, actions, 'cves')
     while True:
         try:
-            response = get('https://services.nvd.nist.gov/rest/json/cves/2.0?', params={'lastModStartDate': str(start_date), 'lastModEndDate': str(end_date)}, headers=headers).json()
-            sleep(DELAY)
+            response = get(
+                'https://services.nvd.nist.gov/rest/json/cves/2.0?',
+                params={'lastModStartDate': str(start_date), 'lastModEndDate': str(end_date)},
+                headers=headers,
+            ).json()
+            sleep(delay)
             break
         except (ConnectTimeout, ConnectionError):
             sleep(6)
     actions = await sanitize_cves(response)
-    await bulk_write_actions(actions, 'cves')
+    await bulk_write_actions(client, actions, 'cves')
 
-async def update_cpe_matchs(start_date: str, end_date: str, headers: dict[str, str]) -> None:
+
+async def update_cpe_matchs(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
     while True:
         try:
-            response = get('https://services.nvd.nist.gov/rest/json/cpematch/2.0?startIndex=', params={'lastModStartDate': str(start_date),'lastModEndDate': str(end_date)}, headers=headers).json()
-            sleep(DELAY)
+            response = get(
+                'https://services.nvd.nist.gov/rest/json/cpematch/2.0?startIndex=',
+                params={'lastModStartDate': str(start_date), 'lastModEndDate': str(end_date)},
+                headers=headers,
+            ).json()
+            sleep(delay)
             break
         except (ConnectTimeout, ConnectionError):
             sleep(6)
     actions = await sanitize_cpe_matchs(response)
-    await bulk_write_actions(actions, 'cpe_matchs')
+    await bulk_write_actions(client, actions, 'cpe_matchs')
 
 
-async def update_cpes(start_date: str, end_date: str, headers: dict[str, str]) -> None:
+async def update_cpes(client: AsyncIOMotorClient, headers: dict[str, str], delay: float, start_date: str, end_date: str) -> None:
     while True:
         try:
-            response = get('https://services.nvd.nist.gov/rest/json/cpes/2.0?startIndex=', params={'lastModStartDate': str(start_date),'lastModEndDate': str(end_date)}, headers=headers).json()
-            sleep(DELAY)
+            response = get(
+                'https://services.nvd.nist.gov/rest/json/cpes/2.0?startIndex=',
+                params={'lastModStartDate': str(start_date), 'lastModEndDate': str(end_date)},
+                headers=headers,
+            ).json()
+            sleep(delay)
             break
         except (ConnectTimeout, ConnectionError):
             sleep(6)
     actions = await sanitize_cpes(response)
-    await bulk_write_actions(actions, 'cpes')
+    await bulk_write_actions(client, actions, 'cpes')
 
 
 async def sanitize_cves(response: dict[str, Any]) -> list[Any]:
@@ -100,7 +108,8 @@ async def sanitize_cpes(response: dict[str, Any]) -> list[Any]:
         actions.append(ReplaceOne({'id': cpe['id']}, cpe, upsert=True))
     return actions
 
-async def bulk_write_actions(actions: list[Any], collection_name: str) -> None:
-    nvd_clone_db: AsyncIOMotorDatabase = CLIENT.nvd
+
+async def bulk_write_actions(client: AsyncIOMotorClient, actions: list[Any], collection_name: str) -> None:
+    nvd_clone_db: AsyncIOMotorDatabase = client.nvd
     collection: AsyncIOMotorCollection = nvd_clone_db.get_collection(collection_name)
     await collection.bulk_write(actions, ordered=True)

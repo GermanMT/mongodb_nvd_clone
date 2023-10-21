@@ -1,5 +1,5 @@
 from requests import get, ConnectTimeout, ConnectionError
-from motor.motor_asyncio import AsyncIOMotorClient,AsyncIOMotorDatabase, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from time import sleep
 from pymongo import InsertOne
 
@@ -23,7 +23,7 @@ async def clone_cpes(client: AsyncIOMotorClient, delay: float, headers: dict[str
                 sleep(6)
         for product in response['products']:
             actions.append(InsertOne(product['cpe']))
-        index+=response['resultsPerPage']
+        index += response['resultsPerPage']
         await cpes_collection.bulk_write(actions, ordered=False)
         if index == response['totalResults']:
             break
