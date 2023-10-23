@@ -4,32 +4,24 @@ from asyncclick import command, argument, option, group
 from asyncio import run
 from src import clone_cves, clone_cpe_matchs, clone_cpes, nvd_sync
 
-import time
-
 
 @command()
 @argument('mongodb_uri')
 @option('--nvd_api', default='')
 async def clone(mongodb_uri, nvd_api):
     headers = {'apiKey': nvd_api}
-
     client = AsyncIOMotorClient(mongodb_uri)
-
     dbs = await client.list_databases()
     while dbs.alive:
         db = await dbs.next()
         if db['name'] == 'nvd':
-            raise Exception('Database have been ready cloned. Delete it or run updater command.')
-
+            raise Exception('NVD database have been already cloned. Delete it or run sync command.')
     if nvd_api:
         delay = 1
     else:
         delay = 6
-
     await clone_cves(client, delay, headers)
-
     await clone_cpe_matchs(client, delay, headers)
-
     await clone_cpes(client, delay, headers)
 
 
@@ -38,14 +30,11 @@ async def clone(mongodb_uri, nvd_api):
 @option('--nvd_api', default='')
 async def sync(mongodb_uri, nvd_api):
     headers = {'apiKey': nvd_api}
-
     client = AsyncIOMotorClient(mongodb_uri)
-
     if nvd_api:
         delay = 1.0
     else:
         delay = 6.0
-
     scheduler = BackgroundScheduler()
     scheduler.add_job(nvd_sync, 'interval', args=[client, headers, delay], seconds=7200)
     scheduler.start()

@@ -10,7 +10,7 @@ Currently the only way to consume NVD data is through a public [API](https://nvd
 
 ## How does it work?
 
-This repository solves this problem by creating an automatic clone on a MongoDB database that the developer has already initialised. This command also create an index for the own id extracted from NVD (cve:id, cpe_match:matchCriteriaId and cpe:cpeNameId). This is done using the command:
+This repository solves this problem by creating an automatic clone on a MongoDB database that the developer has already initialised, in approximately 30 minutes. This command also create an index for the own id extracted from NVD (cve:id, cpe_match:matchCriteriaId and cpe:cpeNameId). This is done using the command:
 
 ```
 python3 main.py clone [your_mongodb_uri] --nvd_api [your_nvd_api_key]
