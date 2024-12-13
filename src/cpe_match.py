@@ -1,6 +1,6 @@
-from requests import get, ConnectTimeout, ConnectionError
+from aiohttp import ClientConnectorError, ContentTypeError, ClientSession
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from time import sleep
+from asyncio import TimeoutError, sleep
 from pymongo import InsertOne
 
 
@@ -12,13 +12,15 @@ async def clone_cpe_matchs(client: AsyncIOMotorClient, delay: float, headers: di
     await cpe_match_collection.create_index('matchCriteriaId', unique=True)
     index: int = 0
     while True:
-        while True:
-            try:
-                response = get(cpe_match_uri + str(index), headers=headers).json()
-                sleep(delay)
-                break
-            except (ConnectTimeout, ConnectionError):
-                sleep(6)
+        async with ClientSession() as session:
+            while True:
+                try:
+                    async with session.get(cpe_match_uri + str(index), headers=headers) as response:
+                        response = await response.json()
+                        await sleep(delay)
+                        break
+                except (ClientConnectorError, ContentTypeError, TimeoutError):
+                    await sleep(6)
         actions: list[InsertOne] = []
         for match_string in response['matchStrings']:
             actions.append(InsertOne(match_string['matchString']))

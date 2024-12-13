@@ -1,6 +1,6 @@
-from requests import get, ConnectTimeout, ConnectionError
+from aiohttp import ClientConnectorError, ContentTypeError, ClientSession
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from time import sleep
+from asyncio import TimeoutError, sleep
 from pymongo import InsertOne
 
 
@@ -12,13 +12,15 @@ async def clone_cpes(client: AsyncIOMotorClient, delay: float, headers: dict[str
     await cpes_collection.create_index('cpeNameId', unique=True)
     index: int = 0
     while True:
-        while True:
-            try:
-                response = get(cpe_uri + str(index), headers=headers).json()
-                sleep(delay)
-                break
-            except (ConnectTimeout, ConnectionError):
-                sleep(6)
+        async with ClientSession() as session:
+            while True:
+                try:
+                    async with session.get(cpe_uri + str(index), headers=headers) as response:
+                        response = await response.json()
+                        await sleep(delay)
+                        break
+                except (ClientConnectorError, ContentTypeError, TimeoutError):
+                    await sleep(6)
         actions: list[InsertOne] = []
         for product in response['products']:
             actions.append(InsertOne(product['cpe']))
